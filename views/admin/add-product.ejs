@@ -1,0 +1,50 @@
+<%- include('../partials/header', { user: user }) %>
+
+<div class="container my-5">
+  <h2 class="text-center mb-4">Add New Product</h2>
+
+  <div class="row">
+    <div class="col-md-8 mx-auto">
+      <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <div class="card p-4 shadow">
+        <form action="/admin/add-product" method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label>Product Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="4" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label>Price (₹)</label>
+            <input type="number" name="price" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Category</label>
+            <select name="category" class="form-control" required>
+              <% if (categories && categories.length > 0) { %>
+                <% categories.forEach(cat => { %>
+                  <option value="<%= cat.name %>"><%= cat.name %></option>
+                <% }) %>
+              <% } else { %>
+                <option value="">No categories available - Add from dashboard</option>
+              <% } %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label>Product Images (up to 5)</label>
+            <input type="file" name="images" class="form-control" accept="image/*" multiple required>
+          </div>
+          <button type="submit" class="btn btn-success btn-lg w-100">Add Product</button>
+        </form>
+        <a href="/admin/dashboard" class="btn btn-secondary mt-3 w-100">Back to Dashboard</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

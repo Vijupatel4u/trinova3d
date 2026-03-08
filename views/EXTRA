@@ -1,0 +1,74 @@
+<p class="card-text text-muted small flex-grow-1"><%= product.description.substring(0, 60) %>...</p>
+                  <p class="fw-bold fs-5 text-primary mb-2">₹<%= product.price %></p>
+                  <button class="btn btn-outline-primary btn-sm mt-auto" data-bs-toggle="modal" data-bs-target="#productModal" onclick="loadProduct('<%= product._id %>')">
+                    View Details
+                  </button>
+
+                  
+<!-- Zoom Styles -->
+<style>
+.zoom-container {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.zoom-lens {
+  position: absolute;
+  border: 1px solid #333;
+  background: rgba(255, 255, 255, 0.4);
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  display: none;
+  cursor: zoom-in;
+}
+
+#mainImage.zoomed {
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+}
+</style>
+
+<!-- Modal Load Script -->
+<script>
+function loadProduct(productId) {
+  const modal = new bootstrap.Modal(document.getElementById('productModal'));
+  modal.show();
+
+
+
+// --- Admin Script: FORCE RESET Admin ---
+
+async function forceCreateAdmin() {
+  try {
+    const email = "admin@trinova3d.in";
+    const plainPassword = "Sharmin123";
+
+    let admin = await User.findOne({ email });
+
+    if (admin) {
+      console.log(`Admin already exists → resetting password...`);
+      admin.password = await;
+      admin.role = 'admin';
+      await admin.save();
+      console.log('Admin password reset successfully!');
+    } else {
+      console.log(`Creating new admin: ${email}`);
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      admin = new User({
+        name: "Admin",
+        email: email,
+        password: hashedPassword,
+        role: 'admin',
+        phone: "0000000000"  // dummy phone for required field
+      });
+      await admin.save();
+      console.log('New admin user created successfully!');
+    }
+  } catch (err) {
+    console.error('Force admin creation failed:', err.message);
+  }
+}
+forceCreateAdmin();

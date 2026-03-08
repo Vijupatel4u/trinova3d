@@ -1,0 +1,21 @@
+<%- include('partials/header', { user: user }) %>
+
+<div class="container my-5 text-center">
+  <div class="py-5">
+    <i class="fas fa-check-circle text-success" style="font-size: 100px;"></i>
+    <h1 class="display-4 text-success mt-4">Order Placed Successfully!</h1>
+    <p class="lead mt-3">Thank you for shopping with Dola Art Corner</p>
+    <p class="fs-5">Your order has been sent via WhatsApp. We will contact you soon for confirmation.</p>
+
+    <div class="mt-5">
+      <a href="/" class="btn btn-primary btn-lg mx-2">
+        Continue Shopping
+      </a>
+      <a href="https://wa.me/9876543210" class="btn btn-success btn-lg mx-2">
+        <i class="fab fa-whatsapp"></i> Open WhatsApp Chat
+      </a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

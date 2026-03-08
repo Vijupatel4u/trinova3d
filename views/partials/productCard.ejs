@@ -1,0 +1,14 @@
+<div class="product-card">
+  <div class="img-container">
+    <img src="/uploads/<%= product.image %>" alt="<%= product.name %>">
+    
+    <div class="zoom-box">
+      <img src="/uploads/<%= product.image %>" alt="Zoomed view">
+    </div>
+  </div>
+
+  <div class="product-info">
+    <h4><%= product.name %></h4>
+    <p>₹ <%= product.price %></p>
+  </div>
+</div>

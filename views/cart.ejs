@@ -1,0 +1,132 @@
+<%- include('partials/header', { user: user }) %>
+
+<div class="container my-5">
+  <h2 class="text-center mb-5 fw-bold">Your Shopping Cart</h2>
+
+  <div id="alert-container"></div>
+
+  <% if (cartItems && cartItems.length > 0) { %>
+    <div class="table-responsive shadow rounded">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th class="text-center">Quantity</th>
+            <th>Subtotal</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% cartItems.forEach(item => { %>
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <img src="<%= item.product.images[0] || 'https://via.placeholder.com/80' %>" 
+                       style="width: 80px; height: 80px; object-fit: cover;" 
+                       class="rounded me-3" 
+                       alt="<%= item.product.name %>">
+                  <div>
+                    <h6 class="mb-0"><%= item.product.name %></h6>
+                  </div>
+                </div>
+              </td>
+              <td>₹<%= item.product.price.toFixed(2) %></td>
+              <td class="text-center">
+                <div class="input-group input-group-sm justify-content-center" style="width: 120px; margin: auto;">
+                  <button class="btn btn-outline-secondary" type="button" onclick="changeQty('<%= item.product._id %>', 'decrease')">-</button>
+                  <input type="text" class="form-control text-center bg-white" value="<%= item.quantity %>" readonly>
+                  <button class="btn btn-outline-secondary" type="button" onclick="changeQty('<%= item.product._id %>', 'increase')">+</button>
+                </div>
+              </td>
+              <td class="fw-bold">₹<%= (item.product.price * item.quantity).toFixed(2) %></td>
+              <td>
+                <button class="btn btn-danger btn-sm" onclick="removeItem('<%= item.product._id %>')">
+                  <i class="fas fa-trash"></i> Remove
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+        <tfoot class="table-light">
+          <tr>
+            <td colspan="3" class="text-end fw-bold fs-5">Grand Total:</td>
+            <td class="fw-bold fs-5 text-primary">₹<%= totalAmount.toFixed(2) %></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+      <a href="/" class="btn btn-outline-primary btn-lg px-4">Continue Shopping</a>
+      <a href="/cart/checkout" class="btn btn-success btn-lg px-5">Proceed to Checkout</a>
+    </div>
+
+  <% } else { %>
+    <div class="text-center py-5 shadow-sm rounded border">
+      <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+      <h3 class="text-muted">Your cart is empty</h3>
+      <p class="text-secondary">Looks like you haven't added anything to your cart yet.</p>
+      <a href="/" class="btn btn-primary btn-lg mt-3 px-5">Start Shopping</a>
+    </div>
+  <% } %>
+</div>
+
+<script>
+// Alert function to show feedback to the user
+function showAlert(message, type) {
+  const container = document.getElementById('alert-container');
+  container.innerHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+}
+
+async function changeQty(productId, action) {
+  try {
+    const response = await fetch('/cart/update-quantity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, action })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Reload page to refresh subtotal and grand total
+      location.reload();
+    } else {
+      showAlert(data.message || 'Failed to update quantity', 'danger');
+    }
+  } catch (err) {
+    console.error('Update Quantity Error:', err);
+    showAlert('Something went wrong. Please try again.', 'danger');
+  }
+}
+
+async function removeItem(productId) {
+  if (confirm('Are you sure you want to remove this item?')) {
+    try {
+      const response = await fetch(`/cart/remove/${productId}`, { 
+        method: 'POST' 
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        location.reload();
+      } else {
+        showAlert('Failed to remove item', 'danger');
+      }
+    } catch (err) {
+      console.error('Remove Item Error:', err);
+      showAlert('Error connecting to server', 'danger');
+    }
+  }
+}
+</script>
+
+<%- include('partials/footer') %>

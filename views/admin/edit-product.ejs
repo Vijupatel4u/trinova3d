@@ -1,0 +1,87 @@
+<%- include('../partials/header', { user: user }) %>
+
+<div class="container my-5">
+  <h2 class="text-center mb-4">Edit Product: <%= product.name %></h2>
+
+  <% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+  <% if (success) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <%= success %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <form action="/admin/edit-product/<%= product._id %>" method="POST" enctype="multipart/form-data">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Product Name</label>
+        <input type="text" name="name" class="form-control" value="<%= product.name %>" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Price (₹)</label>
+        <input type="number" name="price" class="form-control" step="0.01" value="<%= product.price %>" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select" required>
+          <option value="">Select Category</option>
+          <% categories.forEach(cat => { %>
+            <option value="<%= cat._id %>" <%= product.category && product.category.toString() === cat._id.toString() ? 'selected' : '' %>>
+              <%= cat.name %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="4"><%= product.description || '' %></textarea>
+      </div>
+
+      <!-- Current Images with Delete Option -->
+      <div class="col-12">
+        <label class="form-label">Current Images</label>
+        <div class="row g-3">
+          <% if (product.images && product.images.length > 0) { %>
+            <% product.images.forEach((img, index) => { %>
+              <div class="col-md-3">
+                <div class="card">
+                  <img src="<%= img %>" class="card-img-top" alt="Product image" style="height: 150px; object-fit: cover;">
+                  <div class="card-body text-center p-2">
+                    <form action="/admin/delete-product-image" method="POST" style="display:inline;">
+                      <input type="hidden" name="productId" value="<%= product._id %>">
+                      <input type="hidden" name="imageUrl" value="<%= img %>">
+                      <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this image?');">
+                        <i class="fas fa-trash"></i> Delete
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <p class="text-muted">No images uploaded yet.</p>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Add New Images -->
+      <div class="col-12">
+        <label class="form-label">Add New Images (multiple allowed)</label>
+        <input type="file" name="images" class="form-control" multiple accept="image/*">
+        <small class="text-muted">New images will be added to existing ones.</small>
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary btn-lg">Update Product</button>
+        <a href="/admin/dashboard" class="btn btn-secondary btn-lg ms-3">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

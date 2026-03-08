@@ -1,0 +1,258 @@
+<%- include('partials/header', { user: user }) %>
+
+<style>
+  /* Zoom Container Styles */
+  .img-zoom-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .img-zoom-lens {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    width: 100px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0.4);
+    cursor: crosshair;
+    display: none;
+    z-index: 10;
+  }
+
+  .img-zoom-result {
+    border: 1px solid #d4d4d4;
+    width: 400px;
+    height: 400px;
+    position: absolute;
+    left: 105%;
+    top: 0;
+    z-index: 2000;
+    background-repeat: no-repeat;
+    display: none;
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  #mainImage {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: contain;
+  }
+
+  .active-thumb {
+    border: 2px solid var(--primary) !important;
+  }
+</style>
+
+<% if (slideshowImages && slideshowImages.length > 0) { %>
+<div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+  <div class="carousel-inner">
+    <% slideshowImages.forEach((img, index) => { %>
+      <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+        <img src="<%= img.url %>" class="d-block w-100" alt="Slide <%= index + 1 %>" style="height: 70vh; object-fit: cover;">
+        <div class="carousel-caption d-none d-md-block">
+          <h1 class="display-2 fw-bold artistic-gradient">
+            Trinova3D</h1>
+          <font color="red"><p class="lead"><h2><b>Where Vision Becomes Dimension</b></h2></p></font>
+          <a href="#featured" class="btn btn-light btn-lg px-5 py-3 fw-bold mt-3 shadow">Explore Collection</a>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+  </button>
+</div>
+<% } else { %>
+<div class="hero text-center text-white position-relative" style="background: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat; min-height: 70vh;">
+  <div class="hero-overlay"></div>
+  <div class="container position-relative py-5">
+    <h1 class="display-3 fw-bold mb-3 artistic-gradient">TriNova3D</h1>
+    <p class="lead fs-4 mb-4">Where Vision Becomes Dimension</p>
+    <a href="#featured" class="btn btn-light btn-lg px-5 py-3 fw-bold shadow">Explore Collection</a>
+  </div>
+</div>
+<% } %>
+
+<div class="container my-5" id="featured">
+  <% if (categories && categories.length > 0) { %>
+    <% categories.forEach(cat => { %>
+      <% const catProducts = products.filter(p => p.category && p.category.toString() === cat._id.toString()) %>
+      <% if (catProducts.length > 0) { %>
+        <h2 class="text-center mb-5 fw-bold text-primary"><%= cat.name %></h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 mb-5">
+          <% catProducts.forEach(product => { %>
+            <div class="col">
+              <div class="card h-100 shadow-sm border-0 product-card" style="cursor: pointer;" onclick="loadProduct('<%= product._id %>')">
+                <img src="<%= (product.images && product.images.length > 0) ? product.images[0] : 'https://via.placeholder.com/300x220?text=Product' %>" class="card-img-top" alt="<%= product.name %>" style="height: 220px; object-fit: cover;">
+                <div class="card-body text-center d-flex flex-column">
+                  <h6 class="card-title fw-bold mb-2"><%= product.name %></h6>
+                  <p class="card-text text-muted small flex-grow-1"><%= product.description.substring(0, 60) %>...</p>
+                  <p class="fw-bold fs-5 artistic-gradient mb-3">₹<%= product.price %></p>
+                  <button class="btn btn-outline-primary btn-sm mt-auto">View Details</button>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    <% }) %>
+  <% } else { %>
+    <div class="text-center py-5">
+      <h3 class="fw-bold">No products yet</h3>
+    </div>
+  <% } %>
+</div>
+
+<!-- Go to Cart Button -->
+<div class="text-center my-5 py-4">
+  <a href="/cart" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-lg" style="font-size: 1.4rem;">
+    <i class="fas fa-shopping-cart me-2"></i> Go to Cart
+  </a>
+</div>
+
+<div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row position-relative">
+          <div class="col-md-2">
+            <div class="d-flex flex-column gap-2" id="thumbnailContainer"></div>
+          </div>
+          <div class="col-md-7 text-center">
+            <div class="img-zoom-container">
+              <div id="zoomLens" class="img-zoom-lens"></div>
+              <img id="mainImage" src="" class="img-fluid rounded shadow-sm">
+              <div id="zoomResult" class="img-zoom-result"></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <h4 id="modalName" class="fw-bold"></h4>
+            <hr>
+            <p id="modalDesc" class="text-muted"></p>
+            <p class="fw-bold text-primary fs-3" id="modalPrice"></p>
+            <button class="btn btn-primary btn-lg w-100 mt-3 shadow" id="modalAddToCartBtn">
+              <i class="fas fa-cart-plus me-2"></i> Add to Cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let productModal;
+document.addEventListener('DOMContentLoaded', () => {
+    const modalEl = document.getElementById('productModal');
+    if(modalEl) productModal = new bootstrap.Modal(modalEl);
+    initImageZoom("mainImage", "zoomResult", "zoomLens");
+});
+
+function initImageZoom(imgID, resultID, lensID) {
+  const img = document.getElementById(imgID);
+  const result = document.getElementById(resultID);
+  const lens = document.getElementById(lensID);
+  img.parentElement.addEventListener("mouseenter", () => {
+    if (window.innerWidth > 420) {
+      lens.style.display = "block";
+      result.style.display = "block";
+    }
+  });
+  img.parentElement.addEventListener("mouseleave", () => {
+    lens.style.display = "none";
+    result.style.display = "none";
+  });
+  function moveLens(e) {
+    const pos = getCursorPos(e);
+    let x = pos.x - (lens.offsetWidth / 2);
+    let y = pos.y - (lens.offsetHeight / 2);
+    if (x > img.width - lens.offsetWidth) x = img.width - lens.offsetWidth;
+    if (x < 0) x = 0;
+    if (y > img.height - lens.offsetHeight) y = img.height - lens.offsetHeight;
+    if (y < 0) y = 0;
+    lens.style.left = x + "px";
+    lens.style.top = y + "px";
+    const cx = result.offsetWidth / lens.offsetWidth;
+    const cy = result.offsetHeight / lens.offsetHeight;
+    result.style.backgroundImage = `url('${img.src}')`;
+    result.style.backgroundSize = `${img.width * cx}px ${img.height * cy}px`;
+    result.style.backgroundPosition = `-${x * cx}px -${y * cy}px`;
+  }
+  function getCursorPos(e) {
+    const a = img.getBoundingClientRect();
+    return { x: e.pageX - a.left - window.scrollX, y: e.pageY - a.top - window.scrollY };
+  }
+  lens.addEventListener("mousemove", moveLens);
+  img.addEventListener("mousemove", moveLens);
+}
+
+function loadProduct(productId) {
+    document.getElementById('modalName').textContent = 'Loading...';
+    document.getElementById('modalDesc').textContent = '';
+    document.getElementById('modalPrice').textContent = '';
+    document.getElementById('thumbnailContainer').innerHTML = '';
+    document.getElementById('mainImage').src = 'https://via.placeholder.com/500?text=Loading...';
+    productModal.show();
+    fetch(`/product/${productId}`)
+        .then(res => res.json())
+        .then(product => {
+            document.getElementById('modalName').textContent = product.name;
+            document.getElementById('modalDesc').textContent = product.description;
+            document.getElementById('modalPrice').textContent = '₹' + product.price;
+            const thumbContainer = document.getElementById('thumbnailContainer');
+            if (product.images && product.images.length > 0) {
+                product.images.forEach((img, idx) => {
+                    const thumb = document.createElement('img');
+                    thumb.src = img;
+                    thumb.className = `img-thumbnail mb-2 ${idx === 0 ? 'active-thumb' : ''}`;
+                    thumb.style.cssText = 'width: 70px; height: 70px; object-fit: cover; cursor: pointer;';
+                    thumb.onclick = () => { 
+                        document.getElementById('mainImage').src = img;
+                        document.querySelectorAll('.img-thumbnail').forEach(t => t.classList.remove('active-thumb'));
+                        thumb.classList.add('active-thumb');
+                    };
+                    thumbContainer.appendChild(thumb);
+                });
+                document.getElementById('mainImage').src = product.images[0];
+            }
+            document.getElementById('modalAddToCartBtn').onclick = () => addToCart(productId);
+        })
+        .catch(err => console.error('Error:', err));
+}
+
+async function addToCart(productId) {
+    try {
+        const response = await fetch(`/cart/add/${productId}`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('✅ Added to cart!');
+            const dot = document.getElementById('cart-dot');
+            if(dot) {
+                if(data.cartCount > 0) {
+                    dot.classList.remove('d-none');
+                } else {
+                    dot.classList.add('d-none');
+                }
+            }
+        } else {
+            alert(data.message || 'Error');
+            if(data.message === 'Please login first') window.location.href = '/auth/login';
+        }
+    } catch (err) {
+        alert('Something went wrong!');
+    }
+}
+</script>
+
+<%- include('partials/footer') %>

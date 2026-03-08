@@ -1,0 +1,8 @@
+<<<<<<< HEAD
+node_modules
+.env
+uploads/
+.DS_Store
+=======
+"node_modules" 
+>>>>>>> 942d346 (Remove node_modules from repo)

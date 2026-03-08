@@ -1,0 +1,180 @@
+<%- include('partials/header', { user: user }) %>
+
+<div class="container my-5">
+  <h2 class="text-center mb-4 artistic-gradient fw-bold">Order Summary & Delivery Details</h2>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card p-4 shadow-sm border-0">
+        <h4 class="mb-4"><i class="fas fa-truck me-2"></i>Delivery Details</h4>
+
+        <div class="mb-4">
+          <label class="fw-bold">Select Saved Address</label>
+          <select id="savedAddressSelect" class="form-select mt-1">
+            <option value="">-- Enter new address --</option>
+            <% if (user && user.addresses && user.addresses.length > 0) { %>
+              <% user.addresses.forEach((addr) => { %>
+                <option value='<%= JSON.stringify(addr) %>'>
+                  <%= addr.name %> - <%= addr.city %> (<%= addr.pincode %>)
+                </option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+
+        <form id="whatsapp-order-form">
+          <div class="mb-3">
+            <label>Full Name</label>
+            <input type="text" name="name" class="form-control" value="<%= user ? user.name : '' %>" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Phone (WhatsApp Number)</label>
+            <input type="tel" name="phone" class="form-control" value="<%= user ? user.phone : '' %>" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Full Address</label>
+            <textarea name="address" class="form-control" rows="3" placeholder="House No, Building, Street..." required></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>City</label>
+              <input type="text" name="city" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Pincode</label>
+              <input type="text" name="pincode" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label>State</label>
+            <input type="text" name="state" class="form-control" value="Gujarat" required>
+          </div>
+
+          <div class="mb-4 form-check">
+            <input type="checkbox" class="form-check-input" id="saveAddress" name="saveAddress">
+            <label class="form-check-label" for="saveAddress">Save this address for future</label>
+          </div>
+
+          <div class="text-end mt-4">
+            <button type="button" id="whatsapp-order-btn" class="btn btn-success btn-lg px-5 shadow">
+              <i class="fab fa-whatsapp me-2"></i> Place Order via WhatsApp
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-4 shadow-sm border-0 sticky-top" style="top: 100px;">
+        <h4 class="fw-bold mb-3">Order Summary</h4>
+        <div id="summary-items">
+          <% 
+            let total = 0;
+            if (cart && cart.length > 0) { 
+              cart.forEach(item => { 
+                total += (item.price * item.quantity);
+          %>
+            <div class="d-flex justify-content-between mb-2">
+              <span><%= item.name %> (x<%= item.quantity %>)</span>
+              <span>₹<%= item.price * item.quantity %></span>
+            </div>
+          <% }); } %>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold fs-5 text-primary">
+          <span>Total Amount</span>
+          <span>₹<%= total %></span>
+        </div>
+        <p class="small text-muted mt-3">* Payment will be confirmed on WhatsApp (COD/UPI)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 1. Dropdown se form bharna
+document.getElementById('savedAddressSelect').addEventListener('change', function() {
+    if (this.value) {
+        try {
+            const addr = JSON.parse(this.value);
+            document.querySelector('input[name="name"]').value = addr.name || '';
+            document.querySelector('input[name="phone"]').value = addr.phone || '';
+            document.querySelector('textarea[name="address"]').value = addr.address || '';
+            document.querySelector('input[name="city"]').value = addr.city || '';
+            document.querySelector('input[name="pincode"]').value = addr.pincode || '';
+            document.querySelector('input[name="state"]').value = addr.state || '';
+        } catch(e) { console.error("Error parsing address", e); }
+    }
+});
+
+// 2. WhatsApp Order aur Address Save Logic
+document.getElementById('whatsapp-order-btn').onclick = async function() {
+    const form = document.getElementById('whatsapp-order-form');
+    const formData = new FormData(form);
+    
+    const details = {
+        name: formData.get('name').trim(),
+        phone: formData.get('phone').trim(),
+        address: formData.get('address').trim(),
+        city: formData.get('city').trim(),
+        pincode: formData.get('pincode').trim(),
+        state: formData.get('state').trim()
+    };
+
+    // Validation
+    if (!details.name || !details.address || !details.city || !details.pincode) {
+        alert('Please fill all delivery details!');
+        return;
+    }
+
+    // --- Address Save API Call ---
+    if (document.getElementById('saveAddress').checked) {
+        try {
+            const saveRes = await fetch('/save-address', { // server.js ke mount ke hisab se prefix check karein
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(details)
+            });
+            const saveData = await saveRes.json();
+            if (!saveData.success) {
+                console.error("Address save failed on server");
+            }
+        } catch (err) {
+            console.error("Network error while saving address", err);
+        }
+    }
+
+    // Message Build karna
+    let message = `*Dola Art Corner - New Order*\n\n`;
+    message += `*Customer:* ${details.name}\n`;
+    message += `*Contact:* ${details.phone}\n`;
+    message += `*Address:* ${details.address}, ${details.city}, ${details.state} - ${details.pincode}\n\n`;
+    message += `*Items:* \n`;
+
+    document.querySelectorAll('#summary-items div').forEach(div => {
+        message += `• ${div.innerText}\n`;
+    });
+
+    const totalText = document.querySelector('.text-primary span:last-child').innerText;
+    message += `\n*Total Payable: ${totalText}*\n`;
+    message += `\n_Please confirm my order. Thank you!_`;
+
+    // WhatsApp par redirect
+    const waUrl = `https://wa.me/916351901228?text=` + encodeURIComponent(message);
+    window.open(waUrl, '_blank');
+
+    // Cart clear aur Redirect
+    const clearRes = await fetch('/cart/clear', { method: 'POST' });
+    const clearData = await clearRes.json();
+    if (clearData.success) {
+        alert('Order details sent via WhatsApp!');
+        window.location.href = '/';
+    }
+};
+</script>
+
+<%- include('partials/footer') %>
