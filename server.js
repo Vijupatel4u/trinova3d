@@ -15,7 +15,13 @@ const MONGO_URI = "mongodb+srv://trinova3dadmin:Sharmin123@cluster0.ujdd9nz.mong
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.log('❌ MongoDB Error:', err.message));
-
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,   // Fast fail if server not found
+  socketTimeoutMS: 45000,           // Keep connection alive longer
+  family: 4                         // Force IPv4 (Render pe common issue)
+})
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.error('❌ MongoDB Error:', err));
 // --- Cloudinary Config ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -63,13 +69,13 @@ app.use(async (req, res, next) => {
         cartCount = userCart.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
       }
     } catch (err) {
-      console.error('Cart sync error:', err);
+      console.error('Cart sync error (skipping):', err.message);
+      // Don't crash the app - continue with session cart count
     }
   }
 
   res.locals.cartCount = cartCount;
   res.locals.user = req.session.user || null;
-
   next();
 });
 // --- Routes Registration ---
@@ -79,22 +85,23 @@ app.use('/contact', require('./routes/contact'));
 // --- Home Page ---
 app.get('/', async (req, res) => {
   try {
-    const products = await Product.find().lean();
-    const categories = await Category.find().lean();
+    const products = await Product.find().lean().catch(() => []);
+    const categories = await Category.find().lean().catch(() => []);
     
     const slideshowDocs = await Slideshow.find()
       .sort({ createdAt: -1 })
       .limit(6)
-      .lean();
-    
+      .lean()
+      .catch(() => []);
+
     const slideshowImages = slideshowDocs.map(doc => ({
       url: doc.imageUrl,
-      caption: doc.caption || 'Where Vision Becomes Dimension'
+      caption: doc.caption || 'Dola Art Corner'
     }));
 
     res.render('home', { products, categories, slideshowImages });
   } catch (err) {
-    console.error('Home page error:', err);
+    console.error('Home page error:', err.message);
     res.render('home', { products: [], categories: [], slideshowImages: [] });
   }
 });
