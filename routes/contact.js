@@ -20,13 +20,12 @@ router.post('/send', (req, res) => {
 
   // Prepare WhatsApp message
   const whatsappMessage = encodeURIComponent(
-    `*New Enquiry from Dola Art Corner Website*\n\n` +
+    `*New Enquiry from TriNova3D*\n\n` +
     `Name: ${name}\n` +
     `Email: ${email || 'Not provided'}\n` +
     `Subject: ${subject || 'General Enquiry'}\n` +
     `Message:\n${message}\n\n` +
-    `Reply to this message to contact the customer.`
-  );
+    );
 
   // WhatsApp number (same as used in place order)
   const whatsappNumber = '916351901228'; // Change only if needed
