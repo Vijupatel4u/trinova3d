@@ -247,7 +247,7 @@ async function addToCart(productId) {
             }
         } else {
             alert(data.message || 'Error');
-            if(data.message === 'Please login first') window.location.href = '/auth/login';
+            if(data.message === 'Please login first') window.location.href = 'login';
         }
     } catch (err) {
         alert('Something went wrong!');
